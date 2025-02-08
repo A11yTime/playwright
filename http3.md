@@ -12,9 +12,9 @@ test('Check accessibility of the page with no HTTP/2 errors', async ({ page }) =
       });
     });
 
-    // Try navigating with a 30-second timeout and DOMContentLoaded event
-    await page.goto('https://www.fidelity.com/', { timeout: 30000, waitUntil: 'domcontentloaded' });
-
+    // Navigate to the URL
+    await page.goto('https://www.fidelity.com/', { timeout: 60000, waitUntil: 'load' });
+    
     // Inject axe-core into the page
     await page.addScriptTag({ path: require.resolve('axe-core') });
 
