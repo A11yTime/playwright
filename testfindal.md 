@@ -1,0 +1,61 @@
+const { test, expect } = require('@playwright/test');
+
+test('Check accessibility after login and tab click', async ({ page }) => {
+  try {
+    // Enable request interception on the page
+    await page.route('**/*', (route) => {
+      route.continue({
+        headers: {
+          ...route.request().headers(),
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        },
+      });
+    });
+
+    // Navigate to the login page (Adjust the URL to the login page if necessary)
+    await page.goto('https://www.fidelity.com/login', { timeout: 30000, waitUntil: 'domcontentloaded' });
+
+    // Fill in the login form with the user ID and password
+    const userId = 'your-username'; // Replace with your actual username
+    const password = 'your-password'; // Replace with your actual password
+
+    await page.fill('input[name="username"]', userId); // Update selector if needed
+    await page.fill('input[name="password"]', password); // Update selector if needed
+
+    // Submit the login form (adjust the selector if necessary)
+    await page.click('button[type="submit"]'); // Update this with the correct submit button selector
+
+    // Wait for the page to redirect after login
+    await page.waitForNavigation({ waitUntil: 'domcontentloaded' });
+
+    // After login, click on a tab (Adjust selector for the actual tab you want to click)
+    await page.click('a[aria-label="Your Tab Name"]'); // Change this selector to match your tab
+
+    // Wait for the tab content to load (optional, depending on the app behavior)
+    await page.waitForSelector('.tab-content-selector'); // Replace with an actual selector in the tab's content
+
+    // Inject axe-core into the page for accessibility testing
+    await page.addScriptTag({ path: require.resolve('axe-core') });
+
+    // Run axe-core accessibility checks
+    const result = await page.evaluate(() => {
+      return new Promise((resolve) => {
+        window.axe.run(document, {}, (err, results) => {
+          if (err) {
+            console.error('Axe failed to run:', err);
+            resolve([]);
+          }
+          resolve(results.violations);
+        });
+      });
+    });
+
+    console.log(result);
+
+    // Assert that there are no serious accessibility issues
+    expect(result.length).toBeLessThanOrEqual(5); // Adjust based on your needs
+  } catch (error) {
+    console.error('Test failed with error:', error);
+    throw error; // Re-throw error to fail the test appropriately
+  }
+});
